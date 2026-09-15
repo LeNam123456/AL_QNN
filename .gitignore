@@ -30,6 +30,7 @@ wheels/
 # Local Execution & Temporary Files (Kept locally only)
 *.sh
 *.ps1
+*.bat
 *.log
 *.zip
 test_anim.gif
@@ -38,6 +39,14 @@ fix_*.py
 patch_sys_path.py
 unpatch.py
 figures/diagnostics/*.html
+
+# Redundant Images & Interim Training Plots (Kept locally only)
+barren_plateau_*.png
+barren_plateau_*.gif
+parameter_shift_vs_backprop_complexity.png
+qnn_training_challenges.png
+static_vs_adaptive_hea_concept.png
+**/learning_curve.png
 
 # Jupyter Notebook Checkpoints
 .ipynb_checkpoints/
