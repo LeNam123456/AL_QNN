@@ -1,0 +1,38 @@
+{
+  "agent": "ppo",
+  "seed": 0,
+  "backend": "simulate",
+  "deploy_backend": "simulate",
+  "dataset": null,
+  "episodes": 15,
+  "config": {
+    "n_qubits": 6,
+    "cost_type": "local",
+    "topology": "linear",
+    "max_depth": 16
+  },
+  "training": {
+    "return_first100": -3.518956523335601,
+    "return_last100": -3.518956523335601,
+    "return_best": -1.0323481366946177
+  },
+  "deploy": {
+    "accuracy_start": 0.0,
+    "accuracy_end": 0.06218438897705958,
+    "f1_end": 0.060940701197518383,
+    "roc_auc_end": 0.5310921944885298,
+    "depth_start": 2,
+    "depth_end": 1,
+    "n_commits": 4,
+    "n_rollbacks": 0,
+    "actions": {
+      "keep": 84,
+      "stop_growth": 12,
+      "propose_prune_layer": 2,
+      "add_layer": 1,
+      "propose_reduce_entanglement": 1
+    }
+  },
+  "model_saved": true,
+  "timestamp": "20260730_075904"
+}

@@ -1,0 +1,2 @@
+epoch,training_loss,validation_loss,accuracy,f1,roc_auc,grad_norm,spatial_grad_variance,near_zero_ratio,depth,n_entangling_gates,entangler_strength,scheduler_action,mutation_status,n_commits,n_rollbacks
+0,0.678591746957609,0.658591746957609,0.04978827448043721,0.048792508990828466,0.5248941372402186,0.05888686929012941,0.006647869871181237,0.15660730632427494,2,14,1.0,keep,none,0,0

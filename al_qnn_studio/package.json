@@ -1,0 +1,13 @@
+{
+  "name": "al-qnn-quantum-studio",
+  "version": "1.0.0",
+  "description": "Adaptive Layered Quantum Neural Network (AL-QNN) Interactive Studio & Inference Dashboard",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve . -p 3000",
+    "dev": "serve . -p 3000"
+  },
+  "keywords": ["quantum-machine-learning", "qnn", "pennylane", "rl-scheduler", "barren-plateaus"],
+  "author": "AL-QNN Research Team",
+  "license": "MIT"
+}

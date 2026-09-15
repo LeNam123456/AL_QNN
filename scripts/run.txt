@@ -1,0 +1,5 @@
+python scripts\05_compare_schedulers.py --backend pennylane --dataset predictive_maintenance --max-samples 200 --n-qubits 12 --cost-type local --epochs 40 --ppo-ckpt C:\Users\ACER\Documents\PROJECT\KLTN\al_qnn_project\outputs\rl_results\simulate\ppo_multiseed_20260727_210028\seed_2\agent.pt --dqn-ckpt C:\Users\ACER\Documents\PROJECT\KLTN\al_qnn_project\outputs\rl_results\simulate\dqn_multiseed_20260728_010422\seed_2\agent.pt --out outputs\comparison\pennylane_q12_local_te --log-telemetry --telemetry-guard
+
+
+
+python scripts\04_train_rl_scheduler.py --rl-path RL\PPO --agent ppo --episodes 600 --backend simulate --use-telemetry --deploy-backend pennylane --dataset predictive_maintenance --max-samples 200 --n-qubits 12 --cost-type global --initial-depth 2 --max-depth 16 --surrogate outputs\surrogate\pdm_q12_16l\surrogate_fit.json --deploy-epochs 40 --seeds 0,1,2

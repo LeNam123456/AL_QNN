@@ -1,0 +1,25 @@
+{
+  "floor": {
+    "f_min": 0.6028686710132436,
+    "f_max": 0.6319847066033092,
+    "a": 0.7372074864777246
+  },
+  "var": {
+    "lv0": -9.955201764584118,
+    "b": 0.09393297441239673,
+    "c": 0.0,
+    "fit_min_depth": 3,
+    "n_points_used": 7
+  },
+  "rmse": {
+    "floor": 0.010283231089177185,
+    "logvar": 0.39512644182586315,
+    "logvar_all_depths": 0.5812453743673089
+  },
+  "meta": {
+    "n_qubits": 8,
+    "cost_type": "local",
+    "topology": "linear",
+    "dataset": "pima_diabetes"
+  }
+}

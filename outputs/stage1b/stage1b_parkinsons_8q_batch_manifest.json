@@ -1,0 +1,105 @@
+{
+  "feature_names": [
+    "V1",
+    "V2",
+    "V3",
+    "V4",
+    "V5",
+    "V6",
+    "V7",
+    "V8"
+  ],
+  "class_names": [
+    "healthy",
+    "parkinsons"
+  ],
+  "scaler_feature_range": [
+    0.0,
+    3.141592653589793
+  ],
+  "feature_selection_report": {
+    "method": "first_n",
+    "selected_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "selected_feature_names": [
+      "V1",
+      "V2",
+      "V3",
+      "V4",
+      "V5",
+      "V6",
+      "V7",
+      "V8"
+    ],
+    "variance_threshold": null,
+    "score_func": null
+  },
+  "boundary_audit_report": {
+    "enabled": true,
+    "lower": 0.0,
+    "upper": 3.141592653589793,
+    "tolerance": 1e-06,
+    "lower_boundary_fraction": 0.008547008547008548,
+    "upper_boundary_fraction": 0.008547008547008548,
+    "total_boundary_fraction": 0.017094017094017096
+  },
+  "batch_overlap_matrix": [
+    [
+      16
+    ]
+  ],
+  "batches": [
+    {
+      "batch_id": 0,
+      "indices": [
+        58,
+        13,
+        61,
+        84,
+        106,
+        4,
+        88,
+        80,
+        73,
+        82,
+        45,
+        21,
+        81,
+        62,
+        97,
+        17
+      ],
+      "y": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1
+      ],
+      "fixed_batch_seed": 42,
+      "class_counts": {
+        "0": 4,
+        "1": 12
+      }
+    }
+  ]
+}

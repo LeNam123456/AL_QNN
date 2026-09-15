@@ -1,0 +1,33 @@
+{
+  "agent": "ppo",
+  "backend": "pennylane",
+  "deploy_backend": "pennylane",
+  "dataset": "mnist",
+  "episodes": 20,
+  "config": {
+    "n_qubits": 4,
+    "cost_type": "local",
+    "topology": "linear",
+    "max_depth": 6
+  },
+  "training": {
+    "return_first100": -0.3190569097731635,
+    "return_last100": -0.3190569097731635,
+    "return_best": 0.41968775793894786
+  },
+  "deploy": {
+    "accuracy_start": 0.6111111111111112,
+    "accuracy_end": 0.5555555555555556,
+    "depth_start": 2,
+    "depth_end": 3,
+    "n_commits": 1,
+    "n_rollbacks": 0,
+    "actions": {
+      "keep": 13,
+      "add_layer": 1,
+      "propose_reduce_entanglement": 1
+    }
+  },
+  "model_saved": true,
+  "timestamp": "20260706_210831"
+}

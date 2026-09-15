@@ -1,0 +1,35 @@
+{
+  "agent": "dqn",
+  "seed": 1,
+  "backend": "simulate",
+  "deploy_backend": "pennylane",
+  "dataset": "predictive_maintenance",
+  "episodes": 600,
+  "config": {
+    "n_qubits": 12,
+    "cost_type": "local",
+    "topology": "linear",
+    "max_depth": 12
+  },
+  "training": {
+    "return_first100": -3.0697353084519734,
+    "return_last100": -2.1205804582381957,
+    "return_best": 0.1779786862401302
+  },
+  "deploy": {
+    "accuracy_start": 0.5666666666666667,
+    "accuracy_end": 0.6833333333333333,
+    "f1_end": 0.7532467532467533,
+    "roc_auc_end": 0.8522222222222222,
+    "depth_start": 2,
+    "depth_end": 8,
+    "n_commits": 6,
+    "n_rollbacks": 0,
+    "actions": {
+      "keep": 34,
+      "add_layer": 6
+    }
+  },
+  "model_saved": true,
+  "timestamp": "20260728_030357"
+}

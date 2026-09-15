@@ -1,0 +1,99 @@
+{
+  "feature_names": [
+    "mean perimeter",
+    "mean concave points",
+    "worst radius",
+    "worst perimeter",
+    "worst area",
+    "worst concave points"
+  ],
+  "class_names": [
+    "0",
+    "1"
+  ],
+  "scaler_feature_range": [
+    0.0,
+    3.141592653589793
+  ],
+  "feature_selection_report": {
+    "method": "variance_then_selectkbest",
+    "selected_indices": [
+      2,
+      7,
+      20,
+      22,
+      23,
+      27
+    ],
+    "selected_feature_names": [
+      "mean perimeter",
+      "mean concave points",
+      "worst radius",
+      "worst perimeter",
+      "worst area",
+      "worst concave points"
+    ],
+    "variance_threshold": 1e-12,
+    "score_func": "f_classif"
+  },
+  "boundary_audit_report": {
+    "enabled": true,
+    "lower": 0.0,
+    "upper": 3.141592653589793,
+    "tolerance": 1e-06,
+    "lower_boundary_fraction": 0.007820136852394917,
+    "upper_boundary_fraction": 0.002932551319648094,
+    "total_boundary_fraction": 0.010752688172043012
+  },
+  "batch_overlap_matrix": [
+    [
+      16
+    ]
+  ],
+  "batches": [
+    {
+      "batch_id": 0,
+      "indices": [
+        286,
+        160,
+        49,
+        320,
+        133,
+        255,
+        263,
+        340,
+        20,
+        242,
+        216,
+        180,
+        288,
+        336,
+        244,
+        251
+      ],
+      "y": [
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1
+      ],
+      "fixed_batch_seed": 42,
+      "class_counts": {
+        "0": 6,
+        "1": 10
+      }
+    }
+  ]
+}

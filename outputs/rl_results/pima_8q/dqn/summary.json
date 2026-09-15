@@ -1,0 +1,36 @@
+{
+  "agent": "dqn",
+  "seed": 0,
+  "backend": "simulate",
+  "deploy_backend": "pennylane",
+  "dataset": "pima_diabetes",
+  "episodes": 800,
+  "config": {
+    "n_qubits": 8,
+    "cost_type": "local",
+    "topology": "linear",
+    "max_depth": 16
+  },
+  "training": {
+    "return_first100": -1.3242321707082407,
+    "return_last100": -0.04006503689242269,
+    "return_best": 0.5976579819101077
+  },
+  "deploy": {
+    "accuracy_start": 0.515527950310559,
+    "accuracy_end": 0.5714285714285714,
+    "f1_end": 0.6933333333333334,
+    "roc_auc_end": 0.4629629629629629,
+    "depth_start": 2,
+    "depth_end": 2,
+    "n_commits": 4,
+    "n_rollbacks": 1,
+    "actions": {
+      "keep": 34,
+      "propose_prune_layer": 4,
+      "add_layer": 2
+    }
+  },
+  "model_saved": true,
+  "timestamp": "20260804_183054"
+}

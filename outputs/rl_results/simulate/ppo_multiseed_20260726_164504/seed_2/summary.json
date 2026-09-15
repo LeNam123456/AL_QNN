@@ -1,0 +1,36 @@
+{
+  "agent": "ppo",
+  "seed": 2,
+  "backend": "simulate",
+  "deploy_backend": "pennylane",
+  "dataset": "predictive_maintenance",
+  "episodes": 600,
+  "config": {
+    "n_qubits": 12,
+    "cost_type": "global",
+    "topology": "linear",
+    "max_depth": 16
+  },
+  "training": {
+    "return_first100": -3.6834444863619775,
+    "return_last100": -1.8960264985798039,
+    "return_best": -0.34519066890231376
+  },
+  "deploy": {
+    "accuracy_start": 0.43333333333333335,
+    "accuracy_end": 0.5,
+    "f1_end": 0.0,
+    "roc_auc_end": 0.5555555555555556,
+    "depth_start": 2,
+    "depth_end": 7,
+    "n_commits": 5,
+    "n_rollbacks": 0,
+    "actions": {
+      "keep": 34,
+      "add_layer": 5,
+      "propose_prune_layer": 1
+    }
+  },
+  "model_saved": true,
+  "timestamp": "20260726_193340"
+}

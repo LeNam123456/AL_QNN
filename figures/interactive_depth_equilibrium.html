@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Circuit Depth Dilemma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Slider style matching Barren widget */
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e2e8f0;
+      height: 4px;
+      border-radius: 2px;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 24px;
+      border-radius: 4px;
+      background: #0f172a;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      transition: transform 0.1s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+    }
+    .grid-major {
+      stroke: #cbd5e1;
+      stroke-width: 1;
+    }
+    .grid-minor {
+      stroke: #f1f5f9;
+      stroke-width: 0.7;
+    }
+  </style>
+</head>
+<body class="bg-transparent text-slate-800 p-2 sm:p-5 flex justify-center items-center min-h-screen">
+
+  <div class="bg-white rounded-2xl shadow-xl border border-slate-200/80 p-6 sm:p-8 w-full max-w-[700px]">
+    
+    <!-- Header -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+      <div>
+        <h1 class="text-[24px] font-bold tracking-tight text-slate-900 leading-tight">The Circuit Depth Dilemma</h1>
+        <p class="text-[12px] text-slate-500 font-medium mt-0.5">Core Problem: Resolving Underfitting vs. Barren Plateaus in QNNs</p>
+      </div>
+      <!-- State Badge -->
+      <div id="stateBadge" class="self-start sm:self-auto px-3.5 py-1 text-[11.5px] font-bold rounded-full border transition-all duration-200">
+        THE EQUILIBRIUM REGION
+      </div>
+    </div>
+
+    <!-- 1. Top Chart: 1D Cost Landscape Slice -->
+    <div class="mb-7">
+      <div class="flex justify-between items-center mb-1">
+        <span id="landscapeTitle" class="text-[13px] font-semibold text-slate-700 tracking-tight">
+          1D Cost Landscape Slice C(θ) at Depth D = 4
+        </span>
+        <span id="landscapeSub" class="text-[11px] font-medium text-emerald-600 transition-colors duration-150">
+          Trainable & Expressive (Global Min C = 0)
+        </span>
+      </div>
+      
+      <div class="relative w-full h-[175px]">
+        <!-- Y-Axis Labels -->
+        <div class="absolute left-0 top-0 text-[11.5px] text-slate-500 mono">1.0</div>
+        <div class="absolute left-0 top-[50%] -translate-y-1/2 text-[11.5px] text-slate-500 mono">0.5</div>
+        <div class="absolute left-0 bottom-[18px] text-[11.5px] text-slate-500 mono">0.0</div>
+
+        <!-- SVG Canvas for 1D Slice -->
+        <svg id="svgLandscape" class="w-full h-full pl-9 pr-1" viewBox="0 0 600 175" preserveAspectRatio="none">
+          <line x1="0" y1="16" x2="600" y2="16" stroke="#f1f5f9" stroke-width="1"/>
+          <line x1="0" y1="85" x2="600" y2="85" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="3,3"/>
+          <line x1="0" y1="155" x2="600" y2="155" stroke="#94a3b8" stroke-width="1.2"/>
+
+          <!-- Underfit Floor Indicator Line (Shown when D <= 2) -->
+          <line id="underfitLine" x1="0" y1="102" x2="600" y2="102" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="3,3" opacity="0"></line>
+          <text id="underfitText" x="300" y="122" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#dc2626" opacity="0">
+            UNDERFITTING WALL (Capacity Deficit: Loss cannot reach zero)
+          </text>
+
+          <!-- Shaded Area Under Curve -->
+          <path id="pathArea" d="" fill="rgba(16, 185, 129, 0.16)"></path>
+
+          <!-- The Landscape Curve -->
+          <path id="pathLine" d="" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+          
+          <!-- Animated Rolling Marble (Viên bi) -->
+          <g id="marbleGroup">
+            <circle id="marbleGlow" cx="0" cy="0" r="8" fill="rgba(16, 185, 129, 0.25)"></circle>
+            <circle id="marbleCore" cx="0" cy="0" r="5.5" fill="#10b981" stroke="#ffffff" stroke-width="2"></circle>
+          </g>
+        </svg>
+
+        <!-- X-Axis Labels -->
+        <div class="flex justify-between pl-9 pr-1 text-[11.5px] text-slate-600 mono -mt-3">
+          <span>-π</span>
+          <span>0</span>
+          <span>π</span>
+        </div>
+        <div class="text-center text-[12px] text-slate-700 font-medium -mt-1">Parameter θ</div>
+      </div>
+    </div>
+
+    <!-- 2. Middle Chart: The Seesaw Trade-off across Circuit Depth D -->
+    <div class="mb-7 mt-3">
+      <div class="flex justify-between items-center mb-1">
+        <span class="text-[13px] font-semibold text-slate-700 tracking-tight">
+          The Seesaw Trade-off: Expressivity vs. Trainability
+        </span>
+        <div class="flex items-center gap-3 text-[11px] text-slate-500">
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>Expressivity</span>
+          <span class="inline-flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-600"></span>Trainability</span>
+        </div>
+      </div>
+
+      <div class="relative w-full h-[180px]">
+        <!-- Y-Axis Labels -->
+        <div class="absolute left-0 top-[4px] text-[11.5px] text-slate-500 mono">1.0</div>
+        <div class="absolute left-0 top-[50%] -translate-y-1/2 text-[11.5px] text-slate-500 mono">0.5</div>
+        <div class="absolute left-0 bottom-[18px] text-[11.5px] text-slate-500 mono">0.0</div>
+
+        <!-- SVG Canvas for Seesaw Plot -->
+        <svg id="svgSeesaw" class="w-full h-full pl-9 pr-1" viewBox="0 0 600 180" preserveAspectRatio="none">
+          <!-- Shaded Background Zones -->
+          <!-- D=1 to 2.5: Underfit (width = 82) -->
+          <rect x="15" y="6" width="77" height="152" fill="#fef3c7" opacity="0.65"></rect>
+          <!-- D=2.5 to 5.5: Equilibrium (width = 155) -->
+          <rect x="92" y="6" width="155" height="152" fill="#dcfce7" opacity="0.75"></rect>
+          <!-- D=5.5 to 12: Barren (width = 338) -->
+          <rect x="247" y="6" width="338" height="152" fill="#fee2e2" opacity="0.55"></rect>
+
+          <!-- Zone Header Badges -->
+          <text x="53" y="24" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#b45309" letter-spacing="0.5">UNDERFIT</text>
+          <text x="170" y="24" text-anchor="middle" font-size="10" font-weight="bold" fill="#065f46" letter-spacing="0.5">EQUILIBRIUM ZONE</text>
+          <text x="416" y="24" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#991b1b" letter-spacing="0.5">BARREN PLATEAU</text>
+
+          <!-- Reference Grid -->
+          <line x1="15" y1="82" x2="585" y2="82" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="2,2"/>
+          <line x1="15" y1="158" x2="585" y2="158" stroke="#cbd5e1" stroke-width="1.2"/>
+
+          <!-- Expressivity Curve (Blue) -->
+          <path id="pathExpr" d="" fill="none" stroke="#2563eb" stroke-width="2.6" stroke-linecap="round"></path>
+          <!-- Trainability Curve (Rose/Red) -->
+          <path id="pathTrain" d="" fill="none" stroke="#dc2626" stroke-width="2.6" stroke-linecap="round"></path>
+
+          <!-- Vertical Active Hairline -->
+          <line id="activeDLine" x1="0" y1="6" x2="0" y2="158" stroke="#0f172a" stroke-width="1.6" stroke-dasharray="3,3"></line>
+
+          <!-- Active Marker on Curves -->
+          <circle id="markerExpr" cx="0" cy="0" r="5" fill="#2563eb" stroke="#ffffff" stroke-width="1.8"></circle>
+          <circle id="markerTrain" cx="0" cy="0" r="5" fill="#dc2626" stroke="#ffffff" stroke-width="1.8"></circle>
+          <circle id="activeDMarker" cx="0" cy="0" r="7.5" fill="#10b981" stroke="#0f172a" stroke-width="2.2"></circle>
+        </svg>
+
+        <!-- X-Axis Labels for Depth -->
+        <div id="xAxisD" class="flex justify-between pl-9 pr-1 text-[11px] text-slate-600 mono -mt-3">
+          <span>D=1</span>
+          <span>2</span>
+          <span>3</span>
+          <span>4</span>
+          <span>5</span>
+          <span>6</span>
+          <span>7</span>
+          <span>8</span>
+          <span>9</span>
+          <span>10</span>
+          <span>11</span>
+          <span>12</span>
+        </div>
+        <div class="text-right text-[12px] text-slate-700 font-medium pr-1 mt-0.5">Circuit Depth D (Layers) →</div>
+      </div>
+    </div>
+
+    <!-- 3. KPI Metrics Cards -->
+    <div class="flex items-center justify-center gap-6 sm:gap-10 py-3.5 mb-6 bg-slate-50/80 rounded-xl border border-slate-100">
+      <div class="text-center">
+        <div class="text-[10.5px] font-bold tracking-wider text-slate-400 uppercase">EXPRESSIVITY E(D)</div>
+        <div id="valExpr" class="text-[20px] font-extrabold text-blue-600 mono">0.835</div>
+      </div>
+      <div class="h-9 w-[1px] bg-slate-200"></div>
+      <div class="text-center">
+        <div class="text-[10.5px] font-bold tracking-wider text-slate-400 uppercase">TRAINABILITY Var(∇L)</div>
+        <div id="valTrain" class="text-[20px] font-extrabold text-emerald-600 mono">0.320</div>
+      </div>
+      <div class="h-9 w-[1px] bg-slate-200"></div>
+      <div class="text-center">
+        <div class="text-[10.5px] font-bold tracking-wider text-slate-400 uppercase">OPTIMAL STATE?</div>
+        <div id="valMatch" class="text-[18px] font-extrabold text-emerald-700">TARGET REGION</div>
+      </div>
+    </div>
+
+    <!-- 4. Interactive Controls & Presets -->
+    <div class="pt-4 border-t border-slate-200">
+      
+      <!-- Slider Row -->
+      <div class="flex items-center gap-3 w-full mb-3.5">
+        <span class="text-[13px] font-semibold text-slate-700 whitespace-nowrap">Circuit Depth</span>
+        <input id="depthSlider" type="range" min="1" max="12" step="1" value="4" class="w-full">
+        <div id="depthBadge" class="px-3.5 py-1 bg-slate-100 text-slate-800 text-[13px] font-bold rounded-lg border border-slate-200/80 min-w-[55px] text-center mono">
+          D = 4
+        </div>
+      </div>
+
+      <!-- Quick Preset Buttons for Presentation -->
+      <div class="flex items-center justify-between text-xs">
+        <span class="text-slate-500 font-medium">Quick Presets:</span>
+        <div class="flex gap-2">
+          <button id="btnPresetShallow" class="px-3 py-1 bg-amber-50 text-amber-800 font-semibold rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors">
+            Shallow (D=1)
+          </button>
+          <button id="btnPresetEquil" class="px-3 py-1 bg-emerald-50 text-emerald-800 font-semibold rounded-lg border border-emerald-200 hover:bg-emerald-100 transition-colors">
+            Equilibrium (D=4)
+          </button>
+          <button id="btnPresetDeep" class="px-3 py-1 bg-rose-50 text-rose-800 font-semibold rounded-lg border border-rose-200 hover:bg-rose-100 transition-colors">
+            Deep (D=10)
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let currentD = 4;
+    const maxD = 12;
+
+    function dToX(d) {
+      const minX = 15;
+      const maxX = 585;
+      return minX + ((d - 1) / (maxD - 1)) * (maxX - minX);
+    }
+
+    function getExpr(d) {
+      return 1.0 - Math.exp(-0.45 * d);
+    }
+
+    function getTrain(d) {
+      return Math.exp(-0.38 * (d - 1));
+    }
+
+    // Build Static Seesaw Curves
+    function initSeesaw() {
+      let dE = "";
+      let dT = "";
+      for (let i = 0; i <= 100; i++) {
+        const d = 1 + (i / 100) * (maxD - 1);
+        const x = dToX(d);
+        const yE = 158 - getExpr(d) * 144;
+        const yT = 158 - getTrain(d) * 144;
+        if (i === 0) {
+          dE += `M ${x.toFixed(1)} ${yE.toFixed(1)}`;
+          dT += `M ${x.toFixed(1)} ${yT.toFixed(1)}`;
+        } else {
+          dE += ` L ${x.toFixed(1)} ${yE.toFixed(1)}`;
+          dT += ` L ${x.toFixed(1)} ${yT.toFixed(1)}`;
+        }
+      }
+      document.getElementById('pathExpr').setAttribute('d', dE);
+      document.getElementById('pathTrain').setAttribute('d', dT);
+    }
+
+    // Exact Cost Landscape Formula conditioned on Depth D:
+    // D <= 2: Underfitting floor (cannot reach 0)
+    // D = 3..5: Equilibrium (steep, reaches 0)
+    // D >= 6: Barren Plateau (flattens exponentially to 0.48)
+    function getLandscapeC(theta, d) {
+      if (d <= 2) {
+        const floor = (d === 1) ? 0.38 : 0.22;
+        return floor + 0.25 * (1.0 - Math.cos(theta)) + 0.08 * Math.cos(3 * theta);
+      } else if (d <= 5) {
+        const shape = 0.5 * Math.pow(1.0 - Math.cos(theta), 1.4) + 0.12 * Math.pow(Math.sin(2 * theta), 2);
+        return Math.max(0.0, Math.min(1.0, shape));
+      } else {
+        const flatten = Math.pow(2.0, -(d - 5) * 0.72);
+        const base = 0.5 * Math.pow(1.0 - Math.cos(theta), 1.4);
+        return 0.48 + (base - 0.48) * flatten;
+      }
+    }
+
+    function updateView() {
+      document.getElementById('depthBadge').innerText = `D = ${currentD}`;
+      document.getElementById('depthSlider').value = currentD;
+
+      const badge = document.getElementById('stateBadge');
+      const title = document.getElementById('landscapeTitle');
+      const sub = document.getElementById('landscapeSub');
+      const pathLine = document.getElementById('pathLine');
+      const pathArea = document.getElementById('pathArea');
+      const underfitLine = document.getElementById('underfitLine');
+      const underfitText = document.getElementById('underfitText');
+
+      title.innerText = `1D Cost Landscape Slice C(θ) at Depth D = ${currentD}`;
+
+      if (currentD <= 2) {
+        // Underfitting State
+        badge.className = "self-start sm:self-auto px-3.5 py-1 text-[11.5px] font-bold rounded-full border bg-amber-50 text-amber-800 border-amber-300";
+        badge.innerText = "PREMATURE PRUNING (UNDERFIT)";
+        sub.innerText = "Low Capacity: Underfitting floor prevents convergence (Loss > 0.35)";
+        sub.className = "text-[11px] font-medium text-amber-700";
+        pathLine.setAttribute('stroke', '#d97706');
+        pathArea.setAttribute('fill', 'rgba(217, 119, 6, 0.15)');
+        underfitLine.setAttribute('opacity', '1');
+        underfitText.setAttribute('opacity', '1');
+      } else if (currentD <= 5) {
+        // Equilibrium State
+        badge.className = "self-start sm:self-auto px-3.5 py-1 text-[11.5px] font-bold rounded-full border bg-emerald-50 text-emerald-800 border-emerald-300 shadow-sm";
+        badge.innerText = "THE EQUILIBRIUM REGION (TARGET)";
+        sub.innerText = "Optimal Balance: Global Minimum (C = 0) with healthy gradients";
+        sub.className = "text-[11px] font-medium text-emerald-700";
+        pathLine.setAttribute('stroke', '#10b981');
+        pathArea.setAttribute('fill', 'rgba(16, 185, 129, 0.18)');
+        underfitLine.setAttribute('opacity', '0');
+        underfitText.setAttribute('opacity', '0');
+      } else {
+        // Barren Plateau State
+        badge.className = "self-start sm:self-auto px-3.5 py-1 text-[11.5px] font-bold rounded-full border bg-rose-50 text-rose-800 border-rose-300";
+        badge.innerText = "PREMATURE EXPANSION (BARREN PLATEAU)";
+        sub.innerText = "Haar Randomization: Gradients vanish exponentially into flat plain";
+        sub.className = "text-[11px] font-medium text-rose-700";
+        pathLine.setAttribute('stroke', '#ef4444');
+        pathArea.setAttribute('fill', 'rgba(239, 68, 68, 0.15)');
+        underfitLine.setAttribute('opacity', '0');
+        underfitText.setAttribute('opacity', '0');
+      }
+
+      // Draw Top Landscape Curve
+      let dLine = "";
+      const nPts = 240;
+      for (let i = 0; i <= nPts; i++) {
+        const u = -Math.PI + (i / nPts) * 2 * Math.PI;
+        const c = getLandscapeC(u, currentD);
+        const x = (i / nPts) * 600;
+        const y = 155 - c * (155 - 16);
+        if (i === 0) dLine += `M ${x.toFixed(1)} ${y.toFixed(1)}`;
+        else dLine += ` L ${x.toFixed(1)} ${y.toFixed(1)}`;
+      }
+      pathLine.setAttribute('d', dLine);
+      pathArea.setAttribute('d', `${dLine} L 600 155 L 0 155 Z`);
+
+      // Update Seesaw Active Hairline & Markers
+      const actX = dToX(currentD);
+      const actYE = 158 - getExpr(currentD) * 144;
+      const actYT = 158 - getTrain(currentD) * 144;
+      const midY = (actYE + actYT) / 2;
+
+      document.getElementById('activeDLine').setAttribute('x1', actX);
+      document.getElementById('activeDLine').setAttribute('x2', actX);
+
+      const mE = document.getElementById('markerExpr');
+      const mT = document.getElementById('markerTrain');
+      mE.setAttribute('cx', actX); mE.setAttribute('cy', actYE);
+      mT.setAttribute('cx', actX); mT.setAttribute('cy', actYT);
+
+      const marker = document.getElementById('activeDMarker');
+      marker.setAttribute('cx', actX);
+      marker.setAttribute('cy', midY);
+
+      if (currentD <= 2) marker.setAttribute('fill', '#f59e0b');
+      else if (currentD <= 5) marker.setAttribute('fill', '#10b981');
+      else marker.setAttribute('fill', '#ef4444');
+
+      // KPIs
+      const exprVal = getExpr(currentD);
+      const trainVal = getTrain(currentD);
+      document.getElementById('valExpr').innerText = exprVal.toFixed(3);
+      
+      const elTrain = document.getElementById('valTrain');
+      elTrain.innerText = trainVal >= 0.001 ? trainVal.toFixed(3) : trainVal.toExponential(2);
+      if (currentD <= 2) elTrain.className = "text-[20px] font-extrabold text-amber-600 mono";
+      else if (currentD <= 5) elTrain.className = "text-[20px] font-extrabold text-emerald-600 mono";
+      else elTrain.className = "text-[20px] font-extrabold text-rose-600 mono";
+
+      const valMatch = document.getElementById('valMatch');
+      if (currentD <= 2) {
+        valMatch.innerText = "UNDERFITTING";
+        valMatch.className = "text-[18px] font-extrabold text-amber-600";
+      } else if (currentD <= 5) {
+        valMatch.innerText = "EQUILIBRIUM (★)";
+        valMatch.className = "text-[18px] font-extrabold text-emerald-600";
+      } else {
+        valMatch.innerText = "BARREN PLATEAU";
+        valMatch.className = "text-[18px] font-extrabold text-rose-600";
+      }
+    }
+
+    // Smooth Marble Animation Loop
+    let animStart = performance.now();
+    function animateMarble(now) {
+      const elapsed = (now - animStart) / 1000;
+      const period = 4.2;
+      const phase = Math.sin((elapsed * 2 * Math.PI) / period);
+      
+      let uCenter = 0.0;
+      let uAmp = 0.45 * Math.PI;
+      if (currentD <= 2) {
+        uCenter = 0.0;
+        uAmp = 0.32 * Math.PI;
+      }
+
+      const theta = uCenter + uAmp * phase;
+      const c = getLandscapeC(theta, currentD);
+
+      const sx = ((theta + Math.PI) / (2 * Math.PI)) * 600;
+      const sy = 155 - c * (155 - 16);
+
+      const glow = document.getElementById('marbleGlow');
+      const core = document.getElementById('marbleCore');
+      glow.setAttribute('cx', sx.toFixed(1));
+      glow.setAttribute('cy', sy.toFixed(1));
+      core.setAttribute('cx', sx.toFixed(1));
+      core.setAttribute('cy', sy.toFixed(1));
+
+      const ballCol = (currentD <= 2) ? '#d97706' : (currentD <= 5 ? '#10b981' : '#ef4444');
+      core.setAttribute('fill', ballCol);
+      glow.setAttribute('fill', ballCol);
+
+      requestAnimationFrame(animateMarble);
+    }
+
+    // Listeners
+    document.getElementById('depthSlider').addEventListener('input', (e) => {
+      currentD = parseInt(e.target.value);
+      updateView();
+    });
+
+    document.getElementById('btnPresetShallow').addEventListener('click', () => {
+      currentD = 1; updateView();
+    });
+    document.getElementById('btnPresetEquil').addEventListener('click', () => {
+      currentD = 4; updateView();
+    });
+    document.getElementById('btnPresetDeep').addEventListener('click', () => {
+      currentD = 10; updateView();
+    });
+
+    initSeesaw();
+    updateView();
+    requestAnimationFrame(animateMarble);
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+{
+  "agent": "dqn",
+  "backend": "simulate",
+  "deploy_backend": "pennylane",
+  "dataset": "mnist",
+  "episodes": 600,
+  "config": {
+    "n_qubits": 6,
+    "cost_type": "global",
+    "topology": "linear",
+    "max_depth": 16
+  },
+  "training": {
+    "return_first100": -0.9313425058064239,
+    "return_last100": 0.2837812565728688,
+    "return_best": 2.0543635492518666
+  },
+  "deploy": {
+    "accuracy_start": 0.5166666666666667,
+    "accuracy_end": 0.5666666666666667,
+    "depth_start": 2,
+    "depth_end": 1,
+    "n_commits": 3,
+    "n_rollbacks": 1,
+    "actions": {
+      "keep": 34,
+      "propose_reduce_entanglement": 4,
+      "stop_growth": 1,
+      "propose_prune_layer": 1
+    }
+  },
+  "model_saved": true,
+  "timestamp": "20260707_221755"
+}

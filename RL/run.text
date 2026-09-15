@@ -1,0 +1,20 @@
+python scripts\04_train_rl_scheduler.py --rl-path RL\PPO --agent ppo --episodes 600 --backend simulate --deploy-backend pennylane --dataset mnist --max-samples 200 --n-qubits 6 --cost-type global
+
+python scripts\04_train_rl_scheduler.py --rl-path RL\DQN --agent dqn --episodes 600 --backend simulate --deploy-backend pennylane --dataset mnist --max-samples 200 --n-qubits 6 --cost-type global
+
+python scripts\04_train_rl_scheduler.py --rl-path RL\PPO --agent ppo --episodes 600 --backend simulate --deploy-backend simulate --dataset mnist --max-samples 200
+
+python scripts\04_train_rl_scheduler.py --rl-path RL\DQN --agent dqn --episodes 600 --backend simulate --deploy-backend simulate --dataset mnist --max-samples 200
+
+
+python scripts\05_compare_schedulers.py --backend pennylane --dataset mnist --max-samples 200 --n-qubits 6 --cost-type global --epochs 40 --ppo-ckpt C:\Users\ACER\Documents\PROJECT\KLTN\al_qnn_project\outputs\rl_results\simulate\ppo_20260707_214921\agent.pt --dqn-ckpt C:\Users\ACER\Documents\PROJECT\KLTN\al_qnn_project\outputs\rl_results\simulate\dqn_20260707_221755\agent.pt
+
+python scripts\04_train_rl_scheduler.py --rl-path RL\DQN --agent dqn --episodes 600 --backend simulate --deploy-backend pennylane --dataset mnist --max-samples 200 --n-qubits 6 --cost-type global
+
+python scripts\06_calibrate_surrogate.py --n-qubits 6 --cost-type global --dataset mnist --max-samples 200 --depths 1,2,3,4,5,6,7,8 --entanglers 0.4,0.7,1.0 --epochs 40
+
+
+
+python scripts\05_compare_schedulers.py --backend pennylane --dataset predictive_maintenance --max-samples 200 --n-qubits 6 --cost-type global --epochs 40 --ppo-ckpt C:\Users\ACER\Documents\PROJECT\KLTN\al_qnn_project\outputs\rl_results\simulate\ppo_multiseed_20260716_155859\seed_2\agent.pt--dqn-ckpt C:\Users\ACER\Documents\PROJECT\KLTN\al_qnn_project\outputs\rl_results\simulate\dqn_multiseed_20260716_185305\seed_2\agent.pt
+
+python scripts\05_compare_schedulers.py --backend pennylane --dataset predictive_maintenance --max-samples 200 --n-qubits 6 --cost-type local --epochs 40 --ppo-ckpt C:\Users\ACER\Documents\PROJECT\KLTN\al_qnn_project\outputs\rl_results\simulate\ppo_multiseed_20260721_101230\seed_2\agent.pt --dqn-ckpt C:\Users\ACER\Documents\PROJECT\KLTN\al_qnn_project\outputs\rl_results\simulate\dqn_multiseed_20260721_150850\seed_2\agent.pt --out outputs\comparison\pennylane_local

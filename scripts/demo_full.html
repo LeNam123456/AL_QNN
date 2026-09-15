@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Adaptive QNN Scheduler — Cơ chế & Kết quả</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+<style>
+  :root{ --font-sans:'Google Sans',sans-serif; --mono:'JetBrains Mono',monospace; }
+  body{ font-family:var(--font-sans); background-color:#0b1120; color:#f1f5f9; }
+  .grad-text{ background:linear-gradient(90deg,#4FD1C5,#6C8CFF,#F5B841); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .math-block{ background:rgba(30,41,59,.45); border-left:4px solid #4FD1C5; border-radius:6px; }
+  .tab-btn.active{ background-color:#111a2e; border-bottom:3px solid #4FD1C5; color:#4FD1C5; }
+  canvas{ display:block; background-color:#080d18; border-radius:12px; box-shadow:inset 0 2px 6px rgba(0,0,0,.6); }
+  .panel{ background:rgba(17,26,46,.7); border:1px solid #1e2942; }
+  code,pre{ font-family:var(--mono); }
+  .gate-in{ animation:pop .4s cubic-bezier(.2,.9,.25,1.2); }
+  @keyframes pop{ from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:none} }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="p-4 md:p-8">
+<div class="max-w-7xl mx-auto space-y-8">
+
+  <header class="text-center space-y-3 pb-6 border-b border-slate-800">
+    <div class="inline-flex items-center gap-2 px-3 py-1 bg-teal-500/10 text-teal-300 rounded-full text-xs font-semibold tracking-wider uppercase">
+      <span class="material-icons text-sm">hub</span> Quantum Machine Learning · KLTN SUM26AI48
+    </div>
+    <h1 class="text-3xl md:text-5xl font-bold tracking-tight grad-text">Adaptive QNN Scheduler</h1>
+    <p class="text-sm md:text-base text-slate-400 max-w-3xl mx-auto">
+      Điều khiển kiến trúc mạch lượng tử <span class="text-teal-300 font-semibold">động</span> để giảm thiểu
+      <span class="text-amber-400 font-semibold">Barren Plateau</span> trong mạng nơ-ron lượng tử biến phân (VQC),
+      so sánh bốn phương pháp: Rule · Greedy · PPO · DQN.
+    </p>
+  </header>
+
+  <!-- Tabs -->
+  <div class="panel rounded-2xl overflow-hidden">
+    <div class="flex border-b border-slate-800 overflow-x-auto">
+      <button onclick="tab('bp')" id="tab-bp" class="tab-btn active flex-1 min-w-[160px] py-4 px-4 text-sm font-semibold transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200">
+        <span class="material-icons text-base">trending_down</span> Barren Plateau</button>
+      <button onclick="tab('sched')" id="tab-sched" class="tab-btn flex-1 min-w-[160px] py-4 px-4 text-sm font-semibold transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200">
+        <span class="material-icons text-base">account_tree</span> Adaptive Scheduling</button>
+      <button onclick="tab('mech')" id="tab-mech" class="tab-btn flex-1 min-w-[160px] py-4 px-4 text-sm font-semibold transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200">
+        <span class="material-icons text-base">settings_suggest</span> Bốn cơ chế</button>
+      <button onclick="tab('demo')" id="tab-demo" class="tab-btn flex-1 min-w-[160px] py-4 px-4 text-sm font-semibold transition-all flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200">
+        <span class="material-icons text-base">play_circle</span> Demo & So sánh</button>
+    </div>
+
+    <div class="p-6">
+      <!-- ============ TAB 1: BARREN PLATEAU ============ -->
+      <div id="p-bp" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-7 flex flex-col gap-4">
+          <div class="relative w-full aspect-[4/3] min-h-[320px]">
+            <canvas id="bpCanvas" class="w-full h-full"></canvas>
+          </div>
+          <div class="bg-slate-950/40 p-4 rounded-xl border border-slate-800/60">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-sm font-semibold text-slate-300 flex items-center gap-1">
+                <span class="material-icons text-sm text-teal-400">tune</span> Số qubit
+              </span>
+              <span id="bpQval" class="font-mono text-teal-300 text-sm">n = 6</span>
+            </div>
+            <input id="bpSlider" type="range" min="4" max="14" value="6" class="w-full accent-teal-400">
+            <div id="bpStatus" class="mt-3 text-xs font-mono text-slate-400"></div>
+          </div>
+        </div>
+        <div class="lg:col-span-5 space-y-4">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-6 bg-teal-500 rounded-full"></div>
+            <h2 class="text-xl font-bold text-white">Barren Plateau là gì?</h2>
+          </div>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Khi số qubit tăng, phương sai của gradient <strong>giảm theo hàm mũ</strong>, khiến bề mặt loss
+            trở nên "phẳng" và mô hình gần như không huấn luyện được. Đây là rào cản trung tâm của QML ở quy mô lớn.
+          </p>
+          <div class="p-4 math-block">
+            <div class="text-xs text-teal-400 font-semibold uppercase mb-1">Định luật suy giảm (McClean, 2018)</div>
+            <div class="text-base py-1">$$\mathrm{Var}\!\left[\partial_\theta C\right] \sim 2^{-n}$$</div>
+          </div>
+          <div class="bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+            <div class="text-xs text-amber-400 font-semibold uppercase mb-1 flex items-center gap-1">
+              <span class="material-icons text-sm">science</span> Kết quả đo được của đề tài
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Phương sai nền giảm rõ theo qubit: <span class="text-teal-300 font-mono">lv0</span> từ
+              <span class="font-mono">−7,9 (6q)</span> xuống <span class="font-mono">−9,2 (8q)</span> —
+              tức variance nhỏ đi khoảng <strong>3 lần</strong>. Ở 6–8 qubit, barren plateau
+              <em>theo độ sâu</em> chưa xuất hiện; tín hiệu chi phối là giới hạn biểu đạt.
+            </p>
+          </div>
+          <div class="bg-slate-950/80 rounded-xl border border-slate-800 overflow-hidden text-xs">
+            <div class="bg-slate-900 px-4 py-2 flex justify-between items-center border-b border-slate-800">
+              <span class="text-slate-400 font-mono">Đo variance qua nhiều lần init (chuẩn BP)</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            </div>
+            <pre class="p-4 text-emerald-300 overflow-x-auto"><code>def sample_grad_variance(self, n_samples=10, seed=0):
+    rng = np.random.default_rng(seed)
+    vals = []
+    for _ in range(n_samples):
+        self.theta = rng.uniform(-np.pi, np.pi, size=shape)
+        vals.append(np.var(self._grads().ravel()))
+    return float(np.mean(vals))</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TAB 2: SCHEDULING ============ -->
+      <div id="p-sched" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-7 flex flex-col gap-4">
+          <div class="w-full min-h-[320px] bg-[#080d18] rounded-xl p-3">
+            <svg id="schedSvg" viewBox="0 0 620 300" class="w-full h-full"></svg>
+          </div>
+          <div class="flex gap-2">
+            <button id="schedPlay" class="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1">
+              <span class="material-icons text-sm">play_arrow</span> Chạy minh họa</button>
+            <button id="schedReset" class="px-4 py-2 border border-slate-700 text-slate-300 rounded-lg text-sm">Đặt lại</button>
+            <div id="schedInfo" class="flex-1 text-right font-mono text-xs text-slate-400 self-center"></div>
+          </div>
+        </div>
+        <div class="lg:col-span-5 space-y-4">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-6 bg-indigo-500 rounded-full"></div>
+            <h2 class="text-xl font-bold text-white">Lập lịch kiến trúc thích nghi</h2>
+          </div>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            Mỗi vài epoch, scheduler đọc trạng thái mạch (phương sai gradient, tỉ lệ gradient gần 0, độ sâu)
+            rồi quyết định một hành động: <span class="text-teal-300">thêm lớp</span>,
+            <span class="text-amber-300">tỉa lớp</span>, giữ, hoặc dừng mọc.
+          </p>
+          <div class="p-4 math-block border-l-indigo-500">
+            <div class="text-xs text-indigo-300 font-semibold uppercase mb-1">Hàm phần thưởng</div>
+            <div class="text-sm py-1">$$R = w_1\,\Delta\mathrm{Var} - w_2\,\Delta\mathcal{L} - w_3\,d - w_4\,g$$</div>
+            <p class="text-[11px] text-slate-500 mt-1">thưởng khi variance tăng &amp; loss giảm; phạt theo độ sâu <em>d</em> và số cổng <em>g</em>.</p>
+          </div>
+          <div class="bg-slate-950/40 p-4 rounded-xl border border-slate-800">
+            <div class="text-xs text-emerald-400 font-semibold uppercase mb-1 flex items-center gap-1">
+              <span class="material-icons text-sm">bolt</span> Chiến lược train–deploy
+            </div>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Agent huấn luyện trên <strong>SimulateBackend</strong> đã hiệu chỉnh từ dữ liệu PennyLane thật
+              (surrogate), rồi triển khai trên <strong>PennyLane</strong> — thu hẹp khoảng cách sim-to-real.
+            </p>
+          </div>
+          <div class="bg-slate-950/80 rounded-xl border border-slate-800 overflow-hidden text-xs">
+            <div class="bg-slate-900 px-4 py-2 border-b border-slate-800 text-slate-400 font-mono">Vòng lặp lập lịch</div>
+            <pre class="p-4 text-emerald-300 overflow-x-auto"><code>state = runtime_state(epoch)
+req   = scheduler.decide(state)   # add / prune / keep / stop
+status = mutation.submit(req)      # commit hoặc rollback
+</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TAB 3: 4 MECHANISMS ============ -->
+      <div id="p-mech" class="hidden space-y-6">
+        <p class="text-sm text-slate-400 max-w-3xl">Bốn cơ chế lõi bảo đảm việc thay đổi kiến trúc diễn ra an toàn, không phá vỡ tiến trình huấn luyện đã đạt được.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="panel rounded-2xl p-6 space-y-3">
+            <div class="flex items-center gap-2 text-teal-300 font-bold"><span class="material-icons">gradient</span> Cosine Soft-Masking</div>
+            <p class="text-xs text-slate-400 leading-relaxed">Lớp mới được "bật" dần bằng mặt nạ cosine thay vì bật đột ngột, tránh sốc gradient.</p>
+            <div class="p-3 math-block text-sm">$$m(t)=\tfrac12\!\left(1-\cos\tfrac{\pi t}{T}\right),\; t=0\to T$$</div>
+            <canvas id="maskCanvas" class="w-full" height="90"></canvas>
+          </div>
+          <div class="panel rounded-2xl p-6 space-y-3">
+            <div class="flex items-center gap-2 text-emerald-300 font-bold"><span class="material-icons">check_circle</span> Commit</div>
+            <p class="text-xs text-slate-400 leading-relaxed">Khi một thay đổi kiến trúc giúp loss cải thiện và ổn định, trạng thái được <strong>chốt</strong> làm checkpoint mới.</p>
+            <div class="bg-slate-950/60 rounded-lg p-3 font-mono text-[11px] text-emerald-300">if vloss_improved and stable:<br>&nbsp;&nbsp;registry.commit_checkpoint(vloss)</div>
+          </div>
+          <div class="panel rounded-2xl p-6 space-y-3">
+            <div class="flex items-center gap-2 text-rose-300 font-bold"><span class="material-icons">undo</span> Rollback</div>
+            <p class="text-xs text-slate-400 leading-relaxed">Nếu thay đổi làm loss tăng quá ngưỡng, hệ thống <strong>hoàn tác</strong> về checkpoint gần nhất — bảo vệ tiến trình.</p>
+            <div class="bg-slate-950/60 rounded-lg p-3 font-mono text-[11px] text-rose-300">if vloss &gt; best*(1+τ):<br>&nbsp;&nbsp;registry.rollback()</div>
+          </div>
+          <div class="panel rounded-2xl p-6 space-y-3">
+            <div class="flex items-center gap-2 text-amber-300 font-bold"><span class="material-icons">inventory_2</span> Parameter Registry</div>
+            <p class="text-xs text-slate-400 leading-relaxed">Quản lý tham số θ theo từng lớp, cho phép commit/rollback ở mức lớp mà không phá các lớp khác.</p>
+            <div class="bg-slate-950/60 rounded-lg p-3 font-mono text-[11px] text-amber-300">registry.snapshot(layer_id)<br>registry.restore(layer_id)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ TAB 4: DEMO & COMPARISON ============ -->
+      <div id="p-demo" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div class="lg:col-span-7 flex flex-col gap-4">
+            <div class="w-full min-h-[300px] bg-[#080d18] rounded-xl p-3">
+              <svg id="demoSvg" viewBox="0 0 620 300" class="w-full h-full"></svg>
+            </div>
+            <div class="flex flex-wrap gap-2 items-center">
+              <div class="flex bg-slate-900 border border-slate-700 rounded-lg p-1 gap-1" id="demoPick">
+                <button data-s="rule" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-teal-500 text-slate-900">Rule</button>
+                <button data-s="greedy" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400">Greedy</button>
+                <button data-s="ppo" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400">PPO</button>
+                <button data-s="dqn" class="px-3 py-1.5 rounded-md text-xs font-semibold text-slate-400">DQN</button>
+              </div>
+              <button id="demoRun" class="px-4 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-sm font-semibold flex items-center gap-1">
+                <span class="material-icons text-sm">play_arrow</span> Chạy</button>
+              <label class="px-3 py-2 border border-teal-600/60 text-teal-300 rounded-lg text-xs font-semibold cursor-pointer flex items-center gap-1 hover:bg-teal-500/10">
+                <span class="material-icons text-sm">upload_file</span> Nạp file thật (CSV/JSON)
+                <input id="demoFile" type="file" accept=".json,.csv" class="hidden">
+              </label>
+              <div id="demoMetrics" class="flex-1 text-right font-mono text-xs text-slate-400 self-center"></div>
+            </div>
+            <div id="demoSource" class="text-[11px] font-mono text-slate-500"></div>
+          </div>
+          <div class="lg:col-span-5 space-y-3">
+            <h2 class="text-xl font-bold text-white flex items-center gap-2"><span class="w-2 h-6 bg-amber-500 rounded-full"></span>So sánh bốn scheduler</h2>
+            <div id="cmpCards" class="space-y-2"></div>
+            <div class="text-[11px] text-slate-500 leading-relaxed border-t border-slate-800 pt-3">
+              Animation là minh họa hành vi. Số liệu là kết quả thật trên PennyLane (6 qubit).
+              Accuracy chính thức của PPO/DQN lấy trung bình ± độ lệch chuẩn qua 3 seed:
+              <span class="text-slate-300 font-mono">PPO 0,683±0,072 · DQN 0,533±0,183</span>.
+              Để chạy thật một seed bất kỳ, dùng dashboard Streamlit.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="text-center text-xs text-slate-600 font-mono pt-2">
+    predictive_maintenance · 6 qubit · global cost · train-simulate / deploy-pennylane · dữ liệu cân bằng 50/50
+  </div>
+</div>
+
+<script>
+// ---------- tabs ----------
+const TABS=['bp','sched','mech','demo'];
+function tab(t){
+  TABS.forEach(x=>{
+    document.getElementById('p-'+x).classList.toggle('hidden', x!==t);
+    document.getElementById('tab-'+x).classList.toggle('active', x===t);
+  });
+  if(t==='bp') drawBP();
+  if(t==='mech') drawMask();
+  if(t==='sched') resetSched();
+  if(t==='demo') demoReset();
+}
+
+// ---------- BP canvas ----------
+const bpc=document.getElementById('bpCanvas'), bpx=bpc.getContext('2d');
+const measured={6:-7.93,8:-9.06}; // lv0 đo được
+function lv0(n){ return -3.8 - 0.66*n; } // xấp xỉ tuyến tính khớp điểm đo
+function drawBP(){
+  const w=bpc.width=bpc.clientWidth*2, h=bpc.height=bpc.clientHeight*2; bpx.scale(1,1);
+  bpx.clearRect(0,0,w,h);
+  const pad=70*2, bw=(w-pad*1.4)/11;
+  const sel=+document.getElementById('bpSlider').value;
+  // trục
+  bpx.strokeStyle='#1e2942'; bpx.lineWidth=2;
+  bpx.beginPath(); bpx.moveTo(pad,20); bpx.lineTo(pad,h-pad*0.6); bpx.lineTo(w-20,h-pad*0.6); bpx.stroke();
+  bpx.fillStyle='#64748b'; bpx.font='22px JetBrains Mono';
+  bpx.fillText('log Var', 12, 40); bpx.fillText('qubit', w-90, h-pad*0.6+40);
+  for(let n=4;n<=14;n++){
+    const i=n-4, x=pad+i*bw+bw*0.2, val=lv0(n);
+    const bh=(val+3.8)/(-11)* (h-pad*0.9); // scale
+    const top=(h-pad*0.6)+bh;
+    const isSel=n===sel;
+    bpx.fillStyle=isSel?'#4FD1C5':(measured[n]?'#6C8CFF':'#26314f');
+    bpx.fillRect(x, top, bw*0.6, (h-pad*0.6)-top);
+    bpx.fillStyle=isSel?'#4FD1C5':'#475569'; bpx.font='20px JetBrains Mono';
+    bpx.fillText(n, x+bw*0.15, h-pad*0.6+34);
+    if(measured[n]){ bpx.fillStyle='#6C8CFF'; bpx.fillText('●', x+bw*0.2, top-8); }
+  }
+  document.getElementById('bpQval').textContent='n = '+sel;
+  const v=Math.exp(lv0(sel));
+  const st = sel<=8?'train tốt (BP nhẹ)': sel<=11?'BP rõ, còn train được':'BP nghiêm trọng';
+  const col = sel<=8?'#4ADE80': sel<=11?'#F5B841':'#FB7185';
+  document.getElementById('bpStatus').innerHTML=
+    `variance ≈ <span style="color:${col}">${v.toExponential(1)}</span> · trạng thái: <span style="color:${col}">${st}</span>`+
+    (measured[sel]?' · <span style="color:#6C8CFF">● điểm đo thật</span>':'');
+}
+document.getElementById('bpSlider').addEventListener('input',drawBP);
+
+// ---------- circuit SVG (dùng chung cho sched + demo) ----------
+const NQ=6;
+function drawCircuit(svg, depth, animLast, nq){
+  nq=nq||NQ;
+  const WIRE0=70,TOP=34,COLW=54,GW=30,GH=22,PADX=20;
+  const GAP=Math.min(40, Math.max(22, 240/nq));
+  const wy=i=>TOP+i*GAP;
+  let s='';
+  for(let i=0;i<nq;i++){ const y=wy(i);
+    s+=`<line x1="${PADX}" y1="${y}" x2="600" y2="${y}" stroke="#4FD1C5" stroke-width="1.3" opacity=".45"/>`;
+    s+=`<rect x="${PADX+8}" y="${y-11}" width="30" height="22" rx="5" fill="rgba(79,209,197,.14)" stroke="#4FD1C5"/>`;
+    s+=`<text x="${PADX+23}" y="${y+4}" font-size="9" fill="#4FD1C5" text-anchor="middle" font-family="JetBrains Mono">RX</text>`;
+  }
+  for(let c=0;c<depth;c++){
+    const x=WIRE0+c*COLW, cls=(animLast&&c===depth-1)?'gate-in':'';
+    s+=`<g class="${cls}">`;
+    const ex=x+GW/2+3;
+    for(let i=0;i<nq-1;i++){ const y1=wy(i),y2=wy(i+1);
+      s+=`<line x1="${ex}" y1="${y1}" x2="${ex}" y2="${y2}" stroke="#5A6B94" stroke-width="1.5"/>`+
+         `<circle cx="${ex}" cy="${y1}" r="2.3" fill="#5A6B94"/><circle cx="${ex}" cy="${y2}" r="2.3" fill="#5A6B94"/>`;
+    }
+    for(let i=0;i<nq;i++){ const y=wy(i);
+      s+=`<rect x="${x-GW/2}" y="${y-GH/2}" width="${GW}" height="${GH}" rx="5" fill="#F5B841" stroke="#E89B3C"/>`+
+         `<text x="${x}" y="${y+4}" font-size="9" fill="#241a06" text-anchor="middle" font-weight="700" font-family="JetBrains Mono">RY</text>`;
+    }
+    s+=`</g>`;
+  }
+  s+=`<text x="${WIRE0+depth*COLW-30}" y="18" font-size="13" fill="#64748b" font-family="JetBrains Mono">depth = ${depth}</text>`;
+  svg.innerHTML=s;
+}
+
+// ---------- sched tab animation ----------
+let schedTimer=null;
+function resetSched(){ clearInterval(schedTimer); drawCircuit(document.getElementById('schedSvg'),2,false);
+  document.getElementById('schedInfo').textContent=''; }
+function playSched(){
+  clearInterval(schedTimer); let d=2,ep=0; const grows=new Set([4,9,14,19]);
+  schedTimer=setInterval(()=>{
+    let act='giữ';
+    if(grows.has(ep)&&d<6){ d++; act='＋ thêm lớp ✓ commit'; drawCircuit(document.getElementById('schedSvg'),d,true); }
+    document.getElementById('schedInfo').innerHTML=`epoch ${ep} · depth ${d} · <span style="color:#4FD1C5">${act}</span>`;
+    if(++ep>22) clearInterval(schedTimer);
+  },240);
+}
+document.getElementById('schedPlay').addEventListener('click',playSched);
+document.getElementById('schedReset').addEventListener('click',resetSched);
+
+// ---------- mask canvas ----------
+function drawMask(){
+  const c=document.getElementById('maskCanvas'); if(!c)return;
+  const x=c.getContext('2d'), w=c.width=c.clientWidth*2, h=c.height=c.clientHeight*2;
+  x.clearRect(0,0,w,h); x.strokeStyle='#4FD1C5'; x.lineWidth=3; x.beginPath();
+  for(let i=0;i<=100;i++){ const t=i/100, m=0.5*(1-Math.cos(Math.PI*t));
+    const px=t*w, py=h-8-m*(h-16); i?x.lineTo(px,py):x.moveTo(px,py); }
+  x.stroke();
+  x.fillStyle='#475569'; x.font='18px JetBrains Mono'; x.fillText('0',4,h-6); x.fillText('T',w-24,h-6);
+  x.fillText('mask 0→1',w/2-50,20);
+}
+
+// ---------- demo tab ----------
+const SPEC={
+  rule:  {depthEnd:6,accEnd:0.717,f1:0.767,auc:0.830,grows:[6,12,18,24],rb:null,color:'#4FD1C5'},
+  greedy:{depthEnd:8,accEnd:0.600,f1:0.636,auc:0.587,grows:[4,8,12,16,20,24],rb:null,color:'#F5B841'},
+  ppo:   {depthEnd:7,accEnd:0.717,f1:0.702,auc:0.771,grows:[6,11,16,21,26],rb:30,color:'#6C8CFF'},
+  dqn:   {depthEnd:6,accEnd:0.483,f1:0.537,auc:0.480,grows:[7,13,19,25],rb:16,color:'#FB7185'},
+};
+const NAME={rule:'Rule-based',greedy:'Greedy',ppo:'PPO',dqn:'DQN'};
+const COMMITS={rule:4,greedy:6,ppo:5,dqn:5};
+let demoCur='rule',demoTimer=null;
+function demoPickSet(s){ demoCur=s;
+  [...document.getElementById('demoPick').children].forEach(b=>{
+    const on=b.dataset.s===s;
+    b.className='px-3 py-1.5 rounded-md text-xs font-semibold '+(on?'bg-teal-500 text-slate-900':'text-slate-400');
+  }); demoReset();
+}
+function demoReset(){ clearInterval(demoTimer); drawCircuit(document.getElementById('demoSvg'),2,false);
+  document.getElementById('demoMetrics').textContent=''; }
+function demoRun(){
+  clearInterval(demoTimer); demoReset(); const sp=SPEC[demoCur];
+  let d=2,ep=0,com=0,rb=0; const grows=new Set(sp.grows);
+  demoTimer=setInterval(()=>{
+    const prog=ep/39, acc=(0.4333+(sp.accEnd-0.4333)*(1-Math.pow(1-prog,1.7)));
+    let act='giữ';
+    if(sp.rb===ep){ rb++; act='↩ rollback'; }
+    else if(grows.has(ep)&&d<sp.depthEnd){ d++; com++; act='＋ commit'; drawCircuit(document.getElementById('demoSvg'),d,true); }
+    document.getElementById('demoMetrics').innerHTML=
+      `ep ${ep} · d=${d} · acc <span style="color:${sp.color}">${(acc*100).toFixed(1)}%</span> · commit ${com} · rb ${rb} · <span style="color:${sp.color}">${act}</span>`;
+    if(++ep>=40) clearInterval(demoTimer);
+  },120);
+}
+document.getElementById('demoPick').addEventListener('click',e=>{const b=e.target.closest('button');if(b){loadedRun=null;demoPickSet(b.dataset.s);}});
+document.getElementById('demoRun').addEventListener('click',()=>loadedRun?replayRun(loadedRun):demoRun());
+
+// ---- nạp & phát lại file thật (CSV deploy_log hoặc JSON) ----
+let loadedRun=null;
+
+function parseCSV(text){
+  const lines=text.trim().split(/\r?\n/);
+  const head=lines[0].split(',').map(h=>h.trim());
+  const idx=n=>head.indexOf(n);
+  const iE=idx('epoch'), iD=idx('depth'), iA=idx('accuracy'), iF=idx('f1'),
+        iAct=idx('scheduler_action'), iC=idx('n_commits'), iR=idx('n_rollbacks'),
+        iV=idx('spatial_grad_variance'), iVL=idx('validation_loss');
+  const rows=[];
+  for(let k=1;k<lines.length;k++){
+    const c=lines[k].split(',');
+    if(c.length<3) continue;
+    rows.push({
+      epoch: iE>=0?+c[iE]:k-1, depth: +c[iD], accuracy: +c[iA],
+      f1: iF>=0?+c[iF]:NaN, scheduler_action: iAct>=0?c[iAct].trim():'keep',
+      n_commits: iC>=0?+c[iC]:0, n_rollbacks: iR>=0?+c[iR]:0,
+      spatial_grad_variance: iV>=0?+c[iV]:NaN, validation_loss: iVL>=0?+c[iVL]:NaN,
+    });
+  }
+  const l=rows[rows.length-1], f=rows[0];
+  // đoán tên scheduler + qubit từ tên file (nếu có)
+  return { meta:{scheduler:null, seed:null, backend:'pennylane', n_qubits:null},
+           summary:{depth_start:f.depth, depth_end:l.depth, acc_end:l.accuracy,
+                    n_commits:l.n_commits, n_rollbacks:l.n_rollbacks}, epochs:rows };
+}
+
+document.getElementById('demoFile').addEventListener('change',ev=>{
+  const file=ev.target.files[0]; if(!file)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      let j;
+      if(file.name.toLowerCase().endsWith('.csv')){
+        j=parseCSV(rd.result);
+        // suy scheduler + qubit từ tên file: deploy_log_ppo.csv, ..._6qubit_...
+        const nm=file.name.toLowerCase();
+        ['rule','greedy','ppo','dqn'].forEach(s=>{ if(nm.includes(s)) j.meta.scheduler=s; });
+        const mq=nm.match(/(\d+)\s*qubit/); if(mq) j.meta.n_qubits=+mq[1];
+      } else {
+        j=JSON.parse(rd.result);
+      }
+      if(!j.epochs||!j.epochs.length) throw new Error('không có dòng epoch');
+      loadedRun=j;
+      const m=j.meta||{}, sm=j.summary||{};
+      document.getElementById('demoSource').innerHTML=
+        `● dữ liệu thật (${file.name}): <span style="color:#4FD1C5">${(m.scheduler||'?').toUpperCase()}</span>`+
+        `${m.n_qubits?' · '+m.n_qubits+'q':''}${m.seed!=null?' · seed '+m.seed:''} · ${m.backend||'?'} · `+
+        `commit ${sm.n_commits} · rollback ${sm.n_rollbacks}`;
+      if(m.scheduler&&SPEC[m.scheduler]) demoCur=m.scheduler;
+      demoReset(); replayRun(j);
+    }catch(e){ document.getElementById('demoSource').innerHTML='<span style="color:#FB7185">Lỗi đọc file: '+e.message+'</span>'; }
+  };
+  rd.readAsText(file);
+});
+
+function replayRun(j){
+  clearInterval(demoTimer); demoReset();
+  const nq=(j.meta&&j.meta.n_qubits)||6;
+  const rows=j.epochs, col=SPEC[(j.meta&&j.meta.scheduler)||demoCur]?.color||'#4FD1C5';
+  let i=0, lastDepth=rows[0].depth;
+  drawCircuit(document.getElementById('demoSvg'), lastDepth, false, nq);
+  demoTimer=setInterval(()=>{
+    const r=rows[i], grew=r.depth>lastDepth;
+    if(r.depth!==lastDepth){ drawCircuit(document.getElementById('demoSvg'), r.depth, grew, nq); lastDepth=r.depth; }
+    const act=r.scheduler_action||'keep';
+    const rb=(i>0 && r.n_rollbacks>rows[i-1].n_rollbacks);
+    document.getElementById('demoMetrics').innerHTML=
+      `ep ${r.epoch} · d=${r.depth} · acc <span style="color:${col}">${(r.accuracy*100).toFixed(1)}%</span> · `+
+      `commit ${r.n_commits} · rb ${r.n_rollbacks} · <span style="color:${rb?'#FB7185':col}">${rb?'↩ rollback':act}</span>`;
+    if(++i>=rows.length) clearInterval(demoTimer);
+  },120);
+}
+function fillCmp(){
+  const best=Math.max(...Object.values(SPEC).map(s=>s.accEnd));
+  document.getElementById('cmpCards').innerHTML=Object.keys(SPEC).map(k=>{
+    const d=SPEC[k], win=d.accEnd===best;
+    return `<div class="flex items-center justify-between rounded-lg px-3 py-2 border ${win?'border-emerald-500/50 bg-emerald-500/5':'border-slate-800 bg-slate-950/40'}">
+      <span class="font-semibold text-sm" style="color:${d.color}">${NAME[k]}</span>
+      <span class="font-mono text-xs text-slate-400">acc <b class="${win?'text-emerald-300':'text-slate-200'}">${d.accEnd.toFixed(3)}</b> · F1 ${d.f1.toFixed(3)} · d 2→${d.depthEnd} · c${COMMITS[k]}/r${d.rb!==null?1:0}</span>
+    </div>`;
+  }).join('');
+}
+
+// init
+drawBP(); fillCmp();
+window.addEventListener('resize',()=>{ if(!document.getElementById('p-bp').classList.contains('hidden')) drawBP(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+experiment:
+  name: stage1c_parkinsons_8q
+  group: calibration_parkinsons
+  description: "Build scheduler-readable calibration artifacts from Parkinsons 8Q outputs."
+
+inputs:
+  stage1a:
+    enabled: false
+    runs_path: outputs/stage1a/stage1a_parkinsons_8q_runs.csv
+    param_variance_path: outputs/stage1a/stage1a_parkinsons_8q_param_variance.csv
+    summary_path: outputs/stage1a/stage1a_parkinsons_8q_summary.csv
+
+  stage1b:
+    enabled: true
+    runs_path: outputs/stage1b/stage1b_parkinsons_8q_runs.csv
+    param_variance_path: outputs/stage1b/stage1b_parkinsons_8q_param_variance.parquet
+    summary_path: outputs/stage1b/stage1b_parkinsons_8q_summary.csv
+
+calibration:
+  version: stage1c_v1
+
+  threshold_quantile: 0.05
+  component_threshold_beta: 0.5
+  component_threshold_mode: variance_scaled
+
+  variance_epsilon: 1.0e-30
+  min_component_grad_threshold: 1.0e-12
+  min_normalized_grad_norm_threshold: 1.0e-12
+
+  fixed_component_grad_threshold: 1.0e-6
+  fixed_normalized_grad_norm_threshold: 1.0e-6
+
+  high_risk_variance_quantile: 0.25
+  medium_risk_variance_quantile: 0.50
+  high_risk_near_zero_ratio: 0.85
+  medium_risk_near_zero_ratio: 0.70
+
+  threshold_priority:
+    - stage1b_task_aware_matched
+    - stage1a_random_matched
+    - n_qubit_scaled_fallback
+    - fixed_fallback
+
+  matching_keys:
+    - benchmark_mode
+    - dataset_name
+    - encoding_type
+    - ansatz_type
+    - gate_set
+    - entanglement_topology
+    - entangler_type
+    - n_qubits
+    - depth
+    - loss_type
+    - cost_type
+
+outputs:
+  calibration_rules_path: outputs/stage1c/calibration_rules_parkinsons_8q.json
+  bp_risk_table_path: outputs/stage1c/bp_risk_table_parkinsons_8q.parquet
+  threshold_calibration_table_path: outputs/stage1c/threshold_calibration_table_parkinsons_8q.parquet
+  calibration_report_path: outputs/stage1c/calibration_report_parkinsons_8q.csv

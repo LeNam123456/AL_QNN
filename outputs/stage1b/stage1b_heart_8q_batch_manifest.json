@@ -1,0 +1,105 @@
+{
+  "feature_names": [
+    "pca_component_0",
+    "pca_component_1",
+    "pca_component_2",
+    "pca_component_3",
+    "pca_component_4",
+    "pca_component_5",
+    "pca_component_6",
+    "pca_component_7"
+  ],
+  "class_names": [
+    "no_disease",
+    "disease"
+  ],
+  "scaler_feature_range": [
+    0.0,
+    3.141592653589793
+  ],
+  "feature_selection_report": {
+    "method": "pca",
+    "selected_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "selected_feature_names": [
+      "pca_component_0",
+      "pca_component_1",
+      "pca_component_2",
+      "pca_component_3",
+      "pca_component_4",
+      "pca_component_5",
+      "pca_component_6",
+      "pca_component_7"
+    ],
+    "variance_threshold": null,
+    "score_func": null
+  },
+  "boundary_audit_report": {
+    "enabled": true,
+    "lower": 0.0,
+    "upper": 3.141592653589793,
+    "tolerance": 1e-06,
+    "lower_boundary_fraction": 0.006172839506172839,
+    "upper_boundary_fraction": 0.006172839506172839,
+    "total_boundary_fraction": 0.012345679012345678
+  },
+  "batch_overlap_matrix": [
+    [
+      16
+    ]
+  ],
+  "batches": [
+    {
+      "batch_id": 0,
+      "indices": [
+        76,
+        11,
+        55,
+        152,
+        64,
+        109,
+        154,
+        135,
+        106,
+        20,
+        40,
+        151,
+        92,
+        126,
+        86,
+        16
+      ],
+      "y": [
+        1,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1
+      ],
+      "fixed_batch_seed": 42,
+      "class_counts": {
+        "0": 9,
+        "1": 7
+      }
+    }
+  ]
+}

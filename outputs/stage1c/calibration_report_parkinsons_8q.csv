@@ -1,0 +1,2 @@
+source,runs_rows,param_variance_rows,summary_rows,has_runs,has_param_variance,has_summary,runs_path,param_variance_path,summary_path
+stage1b,20,360,4,True,True,True,outputs/stage1b/stage1b_parkinsons_8q_runs.csv,outputs/stage1b/stage1b_parkinsons_8q_param_variance.parquet,outputs/stage1b/stage1b_parkinsons_8q_summary.csv

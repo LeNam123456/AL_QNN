@@ -1,0 +1,73 @@
+ansatz:
+  encoding_type: none
+  entanglement_topologies:
+  - linear
+  - circular
+  entangler_type: cnot
+  gate_set: RX_RY_RZ_CNOT
+  max_depth: 16
+  shallow_depth: 4
+  type: hea
+benchmark:
+  budget_normalization: same_entangling_gate_count
+  mode: random_bp
+  objective_type: expectation_value
+device:
+  diff_fallback_policy: error
+  diff_method: backprop
+  fallback_diff_method: parameter-shift
+  name: default.qubit
+  shots: null
+experiment:
+  description: Random-parameter BP benchmark for BCW at 6 qubits.
+  group: bcw_6q_random_bp
+  name: stage1a_bcw_6q
+initialization:
+  distribution: uniform
+  high: 3.141592653589793
+  low: -3.141592653589793
+  strategy: full_random_centered
+logging:
+  gradient_logging_mode: raw
+  online_aggregation: true
+  raw_gradient_format: csv
+  save_raw_gradients: true
+metadata:
+  config_hash: 3d809bbaf0a2428d820e93430ba890a565a7a8ee18da6659dd8711e26ba0a8e9
+  numpy_version: 2.5.1
+  pandas_version: 3.0.5
+  pennylane_version: 0.45.1
+  platform: Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39
+  python_version: 3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]
+  pyyaml_version: 6.0.3
+  resolved_at_utc: '2026-07-31T05:16:56.134114+00:00'
+  resolver_messages: []
+metrics:
+  log_epsilon: 1.0e-30
+  near_zero_grad_threshold: 1.0e-06
+outputs:
+  layer_level_path: outputs/stage1a/stage1a_bcw_6q_layers.csv
+  param_variance_path: outputs/stage1a/stage1a_bcw_6q_param_variance.csv
+  plot_dir: outputs/stage1a/plots_bcw_6q
+  raw_gradient_path: outputs/stage1a/stage1a_bcw_6q_gradients.csv
+  run_level_path: outputs/stage1a/stage1a_bcw_6q_runs.csv
+  summary_path: outputs/stage1a/stage1a_bcw_6q_summary.csv
+safety:
+  enforce_resource_limits: true
+  resource_limit_policy: strict
+  resource_overrides:
+    max_qubits: null
+  simulation_profile: debug
+sweep:
+  cost_types:
+  - local
+  - global
+  - hamiltonian_local
+  depths:
+  - 1
+  - 2
+  - 4
+  - 8
+  n_qubits:
+  - 6
+  seeds: 3

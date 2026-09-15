@@ -1,0 +1,105 @@
+{
+  "feature_names": [
+    "preg",
+    "plas",
+    "pres",
+    "skin",
+    "insu",
+    "mass",
+    "pedi",
+    "age"
+  ],
+  "class_names": [
+    "tested_negative",
+    "tested_positive"
+  ],
+  "scaler_feature_range": [
+    0.0,
+    3.141592653589793
+  ],
+  "feature_selection_report": {
+    "method": "first_n",
+    "selected_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "selected_feature_names": [
+      "preg",
+      "plas",
+      "pres",
+      "skin",
+      "insu",
+      "mass",
+      "pedi",
+      "age"
+    ],
+    "variance_threshold": null,
+    "score_func": null
+  },
+  "boundary_audit_report": {
+    "enabled": true,
+    "lower": 0.0,
+    "upper": 3.141592653589793,
+    "tolerance": 1e-06,
+    "lower_boundary_fraction": 0.12934782608695652,
+    "upper_boundary_fraction": 0.002717391304347826,
+    "total_boundary_fraction": 0.13206521739130433
+  },
+  "batch_overlap_matrix": [
+    [
+      16
+    ]
+  ],
+  "batches": [
+    {
+      "batch_id": 0,
+      "indices": [
+        368,
+        83,
+        384,
+        40,
+        190,
+        342,
+        321,
+        212,
+        186,
+        99,
+        451,
+        231,
+        294,
+        35,
+        182,
+        439
+      ],
+      "y": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        0,
+        1,
+        1
+      ],
+      "fixed_batch_seed": 42,
+      "class_counts": {
+        "0": 10,
+        "1": 6
+      }
+    }
+  ]
+}
