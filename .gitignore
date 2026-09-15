@@ -27,8 +27,9 @@ wheels/
 .installed.cfg
 *.egg
 
-# Linux & Temporary Execution Files (Kept locally only)
+# Local Execution & Temporary Files (Kept locally only)
 *.sh
+*.ps1
 *.log
 *.zip
 test_anim.gif
